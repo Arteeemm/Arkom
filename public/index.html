@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Messenger</title>
+</head>
+
+<body>
+
+<h2>Введите имя</h2>
+
+<input id="username">
+<button onclick="enterChat()">Войти</button>
+
+<script>
+
+function enterChat(){
+    const name = document.getElementById("username").value
+    localStorage.setItem("username", name)
+    window.location = "/chat.html"
+}
+
+</script>
+
+</body>
+</html>
