@@ -1,25 +1,68 @@
 <!DOCTYPE html>
-<html>
+<html lang="ru">
 <head>
-<title>Messenger</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Мессенджер — Вход</title>
+  <link href="/output.css" rel="stylesheet">
 </head>
+<body class="h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+  <div class="w-full max-w-md bg-white rounded-2xl shadow-xl p-8 space-y-6">
+    <h1 class="text-3xl font-bold text-center text-gray-800">Мессенджер</h1>
+    <div id="formType" class="text-center text-gray-600">Вход</div>
+    <form id="authForm" class="space-y-5">
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Имя пользователя</label>
+        <input id="username" type="text" required class="mt-1 block w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" placeholder="username">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Пароль</label>
+        <input id="password" type="password" required class="mt-1 block w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" placeholder="••••••••">
+      </div>
+      <button type="submit" class="w-full bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 transition">Войти</button>
+    </form>
+    <div class="text-center">
+      <button id="toggleMode" class="text-blue-600 hover:underline">Нет аккаунта? Зарегистрироваться</button>
+    </div>
+    <p id="error" class="text-red-600 text-center min-h-[1.25rem]"></p>
+  </div>
+  <script>
+    let isLogin = true;
+    const form = document.getElementById("authForm");
+    const toggleBtn = document.getElementById("toggleMode");
+    const title = document.getElementById("formType");
+    const errorEl = document.getElementById("error");
 
-<body>
+    toggleBtn.onclick = () => {
+      isLogin = !isLogin;
+      title.textContent = isLogin ? "Вход" : "Регистрация";
+      toggleBtn.textContent = isLogin ? "Нет аккаунта? Зарегистрироваться" : "Уже есть аккаунт? Войти";
+      form.querySelector("button").textContent = isLogin ? "Войти" : "Зарегистрироваться";
+      errorEl.textContent = "";
+    };
 
-<h2>Введите имя</h2>
-
-<input id="username">
-<button onclick="enterChat()">Войти</button>
-
-<script>
-
-function enterChat(){
-    const name = document.getElementById("username").value
-    localStorage.setItem("username", name)
-    window.location = "/chat.html"
-}
-
-</script>
-
+    form.onsubmit = async (e) => {
+      e.preventDefault();
+      errorEl.textContent = "";
+      const username = document.getElementById("username").value.trim();
+      const password = document.getElementById("password").value;
+      if (!username || !password) return;
+      try {
+        const endpoint = isLogin ? "/api/auth/login" : "/api/auth/register";
+        const res = await fetch(endpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username, password })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Ошибка");
+        localStorage.setItem("token", data.token);
+        localStorage.setItem("user", JSON.stringify(data.user));
+        window.location = "/chat.html";
+      } catch (err) {
+        errorEl.textContent = err.message;
+      }
+    };
+  </script>
 </body>
 </html>

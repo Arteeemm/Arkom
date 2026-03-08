@@ -1,20 +1,45 @@
 <!DOCTYPE html>
-<html>
+<html lang="ru">
 <head>
-<title>Chat</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Мессенджер</title>
+  <link href="/output.css" rel="stylesheet">
+  <script src="/socket.io/socket.io.js"></script>
 </head>
-
-<body>
-
-<h2>Chat</h2>
-
-<div id="messages"></div>
-
-<input id="message">
-<button onclick="sendMessage()">Send</button>
-
-<script src="/socket.io/socket.io.js"></script>
-<script src="script.js"></script>
-
+<body class="h-screen bg-gray-50 flex overflow-hidden">
+  <div id="sidebarOverlay" class="fixed inset-0 bg-black bg-opacity-40 z-30 hidden md:hidden" onclick="closeSidebar()"></div>
+  <aside id="sidebar" class="fixed md:static inset-y-0 left-0 w-80 bg-white border-r border-gray-200 transform -translate-x-full md:translate-x-0 transition-transform duration-300 ease-in-out z-40 flex flex-col">
+    <div class="p-4 border-b flex items-center justify-between bg-gradient-to-r from-blue-600 to-indigo-600 text-white">
+      <h1 class="text-xl font-bold">Мессенджер</h1>
+      <button onclick="closeSidebar()" class="md:hidden text-2xl">&times;</button>
+    </div>
+    <div class="p-3 border-b">
+      <input id="searchInput" type="text" placeholder="Найти пользователя..." class="w-full px-4 py-2.5 bg-gray-100 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
+    </div>
+    <div id="chatList" class="flex-1 overflow-y-auto"></div>
+  </aside>
+  <div class="flex-1 flex flex-col min-w-0">
+    <header class="bg-white border-b shadow-sm px-4 py-3 flex items-center gap-3 md:hidden">
+      <button onclick="openSidebar()" class="text-2xl text-gray-700">☰</button>
+      <div class="flex items-center gap-3 flex-1 min-w-0">
+        <img id="chatAvatar" src="" alt="" class="w-9 h-9 rounded-full object-cover hidden">
+        <div id="chatTitle" class="font-semibold text-lg truncate">Выберите чат</div>
+      </div>
+    </header>
+    <header class="hidden md:flex bg-white border-b shadow-sm px-6 py-3.5 items-center gap-4">
+      <img id="chatAvatarDesktop" src="" alt="" class="w-10 h-10 rounded-full object-cover">
+      <div>
+        <div id="chatTitleDesktop" class="font-semibold text-lg">Выберите чат</div>
+        <div id="chatStatus" class="text-sm text-gray-500">...</div>
+      </div>
+    </header>
+    <div id="messages" class="flex-1 p-4 md:p-6 overflow-y-auto space-y-4 bg-gray-50"></div>
+    <footer class="bg-white border-t p-4 flex items-center gap-3">
+      <input id="messageInput" type="text" placeholder="Напишите сообщение..." class="flex-1 px-5 py-3 bg-gray-100 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" onkeypress="if(event.key === 'Enter') sendMessage()">
+      <button onclick="sendMessage()" class="bg-blue-600 text-white px-6 py-3 rounded-full font-medium hover:bg-blue-700 transition shadow-sm">Отправить</button>
+    </footer>
+  </div>
+  <script src="script.js"></script>
 </body>
 </html>
