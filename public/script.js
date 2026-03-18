@@ -8,6 +8,9 @@ if (!token) window.location.href = "/index.html";
 const storedUser = localStorage.getItem("user");
 if (storedUser) currentUserId = JSON.parse(storedUser).id;
 
+// ✅ Единая заглушка для всех пользователей без фото
+const DEFAULT_AVATAR = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect fill='%23E5E7EB' width='100' height='100'/%3E%3Ccircle cx='50' cy='35' r='15' fill='%239CA3AF'/%3E%3Cellipse cx='50' cy='75' rx='25' ry='20' fill='%239CA3AF'/%3E%3C/svg%3E";
+
 function openSidebar() {
   document.getElementById("sidebar").classList.remove("-translate-x-full");
   document.getElementById("sidebarOverlay").classList.remove("hidden");
@@ -34,14 +37,17 @@ async function loadChats() {
       if (!other) return;
       const isActive = chat._id === currentChatId;
       const lastMsg = chat.lastMessage?.text || "Нет сообщений";
+      const displayName = other.displayName || other.username;
+      // ✅ Использовать DEFAULT_AVATAR если нет фото
+      const avatar = other.avatar || DEFAULT_AVATAR;
       const div = document.createElement("div");
       div.className = `p-4 border-b hover:bg-gray-50 cursor-pointer flex items-center gap-3 transition ${isActive ? "bg-blue-50" : ""}`;
       div.innerHTML = `
         <div class="relative">
-          <img src="${other.avatar || `https://i.pravatar.cc/150?u=${other.username}`}" class="w-12 h-12 rounded-full object-cover border-2 border-white">
+          <img src="${avatar}" class="w-12 h-12 rounded-full object-cover border-2 border-white">
         </div>
         <div class="flex-1 min-w-0">
-          <div class="font-medium truncate">${other.username}</div>
+          <div class="font-medium truncate">${displayName}</div>
           <div class="text-sm text-gray-500 truncate">${lastMsg}</div>
         </div>
         <div class="text-xs text-gray-400">
@@ -49,7 +55,7 @@ async function loadChats() {
         </div>
       `;
       div.onclick = () => {
-        openChat(chat._id, other.username, other.avatar);
+        openChat(chat._id, displayName, avatar);
         if (window.innerWidth < 768) closeSidebar();
       };
       container.appendChild(div);
@@ -61,14 +67,15 @@ async function loadChats() {
 
 async function openChat(chatId, title, avatar = null) {
   currentChatId = chatId;
+  showChatUI();
+  
   document.getElementById("chatTitle").textContent = title;
-  document.getElementById("chatTitleDesktop").textContent = title;
-  const avatarEl = document.getElementById("chatAvatar");
-  const avatarDesktop = document.getElementById("chatAvatarDesktop");
-  const defaultAvatar = `https://i.pravatar.cc/150?u=${title}`;
-  if (avatarEl) avatarEl.src = avatar || defaultAvatar;
-  if (avatarDesktop) avatarDesktop.src = avatar || defaultAvatar;
-  avatarEl?.classList.remove("hidden");
+  document.getElementById("chatTitleMobile").textContent = title;
+  // ✅ Использовать DEFAULT_AVATAR если avatar пуст
+  const avatarSrc = avatar || DEFAULT_AVATAR;
+  document.getElementById("chatAvatar").src = avatarSrc;
+  document.getElementById("chatAvatarMobile").src = avatarSrc;
+  
   try {
     const res = await fetch(`/api/messages/${chatId}`, { headers: { "Authorization": `Bearer ${token}` } });
     const messages = await res.json();
@@ -129,11 +136,14 @@ document.getElementById("searchInput").addEventListener("input", (e) => {
         return;
       }
       users.forEach(user => {
+        const displayName = user.displayName || user.username;
+        // ✅ Использовать DEFAULT_AVATAR если нет фото
+        const avatar = user.avatar || DEFAULT_AVATAR;
         const div = document.createElement("div");
         div.className = "p-4 hover:bg-gray-50 cursor-pointer flex items-center gap-3 border-b";
         div.innerHTML = `
-          <img src="${user.avatar || `https://i.pravatar.cc/150?u=${user.username}`}" class="w-11 h-11 rounded-full object-cover">
-          <div class="font-medium">${user.username}</div>
+          <img src="${avatar}" class="w-11 h-11 rounded-full object-cover">
+          <div class="font-medium">${displayName}</div>
         `;
         div.onclick = async () => {
           try {
@@ -143,7 +153,8 @@ document.getElementById("searchInput").addEventListener("input", (e) => {
               body: JSON.stringify({ otherUserId: user._id })
             });
             const chat = await resp.json();
-            openChat(chat._id, user.username, user.avatar);
+            openChat(chat._id, displayName, avatar);
+            loadChats();
             if (window.innerWidth < 768) closeSidebar();
           } catch (err) {
             console.error("Ошибка создания чата", err);
