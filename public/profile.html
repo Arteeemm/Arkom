@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Мой профиль — Мессенджер</title>
+  <link href="/output.css" rel="stylesheet">
+</head>
+<body class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-8 px-4">
+  <div class="max-w-2xl mx-auto">
+    <div class="flex items-center justify-between mb-8">
+      <h1 class="text-3xl font-bold text-gray-800">Мой профиль</h1>
+      <button onclick="logout()" class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition">Выход</button>
+    </div>
+
+    <div class="bg-white rounded-3xl shadow-2xl overflow-hidden">
+      <div class="h-32 bg-gradient-to-r from-blue-600 to-indigo-600"></div>
+
+      <div class="px-6 md:px-8 pb-8">
+        <div class="flex flex-col md:flex-row items-start md:items-end gap-6 -mt-16 mb-8 relative z-10">
+          <div class="relative">
+            <img id="avatarPreview" src="" alt="Avatar" class="w-32 h-32 rounded-full border-4 border-white shadow-lg object-cover bg-gray-200 cursor-pointer hover:opacity-80 transition" onclick="document.getElementById('avatarInput').click()">
+            <input type="file" id="avatarInput" accept="image/*" style="display: none;" onchange="uploadAvatar(event)">
+            <label class="absolute bottom-0 right-0 bg-blue-600 text-white p-2 rounded-full shadow-lg cursor-pointer hover:bg-blue-700 transition text-xl" title="Изменить фото" onclick="document.getElementById('avatarInput').click()">
+              📷
+            </label>
+          </div>
+
+          <div class="flex-1 min-w-0">
+            <h2 id="displayName" class="text-2xl font-bold text-gray-800 truncate">Загрузка...</h2>
+            <p id="username" class="text-gray-500">@username</p>
+          </div>
+        </div>
+
+        <form id="profileForm" class="space-y-6 mb-8">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Отображаемое имя</label>
+            <input id="displayNameInput" type="text" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition" placeholder="Ваше имя">
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">О себе</label>
+            <textarea id="bioInput" maxlength="150" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition resize-none" rows="4" placeholder="Расскажите о себе..."></textarea>
+            <div class="flex justify-between items-center mt-2">
+              <span class="text-xs text-gray-500">Максимум 150 символов</span>
+              <span id="charCount" class="text-xs font-medium text-blue-600">0/150</span>
+            </div>
+          </div>
+
+          <button type="submit" class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3 rounded-lg font-medium hover:from-blue-700 hover:to-indigo-700 transition shadow-lg">💾 Сохранить изменения</button>
+        </form>
+
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 pt-8 border-t border-gray-200">
+          <div class="text-center">
+            <p class="text-2xl font-bold text-blue-600">—</p>
+            <p class="text-sm text-gray-600">Диалогов</p>
+          </div>
+          <div class="text-center">
+            <p class="text-2xl font-bold text-indigo-600">—</p>
+            <p class="text-sm text-gray-600">Сообщений</p>
+          </div>
+          <div class="text-center">
+            <p class="text-2xl font-bold text-purple-600">—</p>
+            <p class="text-sm text-gray-600">Контактов</p>
+          </div>
+          <div class="text-center">
+            <p id="joinDate" class="text-lg font-bold text-pink-600">—</p>
+            <p class="text-sm text-gray-600">Присоединился</p>
+          </div>
+        </div>
+
+        <div class="mt-8 text-center">
+          <a href="/chat.html" class="text-blue-600 hover:text-blue-700 font-medium">← Вернуться в чаты</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ✅ Единая заглушка для всех пользователей без фото
+    const DEFAULT_AVATAR = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect fill='%23E5E7EB' width='100' height='100'/%3E%3Ccircle cx='50' cy='35' r='15' fill='%239CA3AF'/%3E%3Cellipse cx='50' cy='75' rx='25' ry='20' fill='%239CA3AF'/%3E%3C/svg%3E";
+
+    let currentUser = null;
+
+    async function loadProfile() {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) {
+          window.location = "/index.html";
+          return;
+        }
+
+        const res = await fetch("/api/user/profile", {
+          headers: { "Authorization": `Bearer ${token}` }
+        });
+
+        if (!res.ok) throw new Error("Не удалось загрузить профиль");
+
+        currentUser = await res.json();
+        displayProfile();
+      } catch (err) {
+        alert("Ошибка: " + err.message);
+        window.location = "/index.html";
+      }
+    }
+
+    function displayProfile() {
+      const userData = JSON.parse(localStorage.getItem("user"));
+      
+      document.getElementById("username").textContent = `@${userData.username}`;
+      document.getElementById("displayName").textContent = currentUser.displayName || userData.username;
+      document.getElementById("displayNameInput").value = currentUser.displayName || "";
+      document.getElementById("bioInput").value = currentUser.bio || "";
+      document.getElementById("charCount").textContent = `${(currentUser.bio || "").length}/150`;
+
+      if (currentUser.avatar) {
+        document.getElementById("avatarPreview").src = currentUser.avatar;
+      } else {
+        // ✅ Использовать DEFAULT_AVATAR вместо рандомного
+        document.getElementById("avatarPreview").src = DEFAULT_AVATAR;
+      }
+
+      const joinDate = new Date(currentUser.createdAt);
+      document.getElementById("joinDate").textContent = joinDate.toLocaleDateString("ru-RU");
+    }
+
+    document.getElementById("profileForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      try {
+        const token = localStorage.getItem("token");
+        const res = await fetch("/api/user/profile/update", {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            displayName: document.getElementById("displayNameInput").value,
+            bio: document.getElementById("bioInput").value
+          })
+        });
+
+        if (!res.ok) throw new Error("Ошибка сохранения");
+
+        currentUser = await res.json();
+        displayProfile();
+        alert("✅ Профиль обновлён!");
+      } catch (err) {
+        alert("❌ Ошибка: " + err.message);
+      }
+    });
+
+    async function uploadAvatar(event) {
+      try {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const formData = new FormData();
+        formData.append("avatar", file);
+
+        const token = localStorage.getItem("token");
+        const res = await fetch("/api/user/profile/avatar", {
+          method: "POST",
+          headers: { "Authorization": `Bearer ${token}` },
+          body: formData
+        });
+
+        if (!res.ok) throw new Error("Ошибка загрузки");
+
+        currentUser = await res.json();
+        document.getElementById("avatarPreview").src = currentUser.avatar;
+        alert("✅ Аватар обновлён!");
+      } catch (err) {
+        alert("❌ Ошибка: " + err.message);
+      }
+    }
+
+    document.getElementById("bioInput").addEventListener("input", (e) => {
+      document.getElementById("charCount").textContent = `${e.target.value.length}/150`;
+    });
+
+    function logout() {
+      if (confirm("Вы уверены?")) {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        window.location = "/index.html";
+      }
+    }
+
+    loadProfile();
+  </script>
+</body>
+</html>
